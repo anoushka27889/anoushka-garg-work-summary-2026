@@ -291,8 +291,39 @@ document.addEventListener('DOMContentLoaded', function() {
   const navItems = document.querySelectorAll('.nav-item[data-slide], .submenu-item[data-slide]');
 
   function navigateToSlide(slideNumber) {
-    // Keynote player only reads hash on page load, so reload with new hash
-    window.location = '/#' + slideNumber;
+    // Get current slide from hash
+    const currentSlide = parseInt(window.location.hash.slice(1)) || 1;
+    const diff = slideNumber - currentSlide;
+
+    if (diff === 0) return;
+
+    // Simulate keyboard navigation
+    const key = diff > 0 ? 'ArrowRight' : 'ArrowLeft';
+    const steps = Math.abs(diff);
+
+    let count = 0;
+    const navigate = () => {
+      if (count >= steps) return;
+
+      // Dispatch to document body
+      const event = new KeyboardEvent('keydown', {
+        key: key,
+        code: key,
+        keyCode: diff > 0 ? 39 : 37,
+        which: diff > 0 ? 39 : 37,
+        bubbles: true,
+        cancelable: true
+      });
+
+      document.dispatchEvent(event);
+      count++;
+
+      if (count < steps) {
+        setTimeout(navigate, 100);
+      }
+    };
+
+    navigate();
   }
 
   navItems.forEach(function(item) {
@@ -312,9 +343,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
-// Navigation helper function
+// Navigation helper function (for console testing)
 window.gotoSlide = function(slideNum) {
-  window.location = '/#' + slideNum;
+  const currentSlide = parseInt(window.location.hash.slice(1)) || 1;
+  const diff = slideNum - currentSlide;
+
+  if (diff === 0) {
+    console.log('Already on slide', slideNum);
+    return;
+  }
+
+  console.log('Navigating from slide', currentSlide, 'to', slideNum, '(' + Math.abs(diff), 'steps)');
+
+  const key = diff > 0 ? 'ArrowRight' : 'ArrowLeft';
+  const steps = Math.abs(diff);
+  let count = 0;
+
+  const navigate = () => {
+    if (count >= steps) return;
+
+    const event = new KeyboardEvent('keydown', {
+      key: key,
+      code: key,
+      keyCode: diff > 0 ? 39 : 37,
+      which: diff > 0 ? 39 : 37,
+      bubbles: true,
+      cancelable: true
+    });
+
+    document.dispatchEvent(event);
+    count++;
+
+    if (count < steps) {
+      setTimeout(navigate, 100);
+    }
+  };
+
+  navigate();
 };
 
 </script>

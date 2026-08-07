@@ -63,6 +63,124 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 14px;
 }
+
+/* Floating Navigation */
+#floatingNav {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(76, 255, 161, 0.3);
+  border-radius: 12px;
+  padding: 12px 20px;
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.nav-item {
+  position: relative;
+  color: #4cffa1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nav-item.nav-top {
+  font-size: 18px;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.nav-item:hover {
+  background: rgba(76, 255, 161, 0.1);
+  color: #6fffb8;
+}
+
+.nav-item.expandable::after {
+  content: '▼';
+  margin-left: 6px;
+  font-size: 9px;
+  transition: transform 0.2s ease;
+}
+
+.nav-item.expandable.expanded::after {
+  transform: rotate(180deg);
+}
+
+.submenu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(76, 255, 161, 0.3);
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 140px;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.submenu.show {
+  display: flex;
+}
+
+.submenu-item {
+  color: #4cffa1;
+  padding: 10px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submenu-item:hover {
+  background: rgba(76, 255, 161, 0.15);
+  color: #6fffb8;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(76, 255, 161, 0.2);
+  margin: 0 4px;
+}
+
+@media (max-width: 768px) {
+  #floatingNav {
+    bottom: 20px;
+    padding: 10px 16px;
+    gap: 4px;
+    max-width: 90%;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .nav-item {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .submenu {
+    min-width: 120px;
+  }
+
+  .submenu-item {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
 </style>
 </head>
 <body id="body" bgcolor="black">
@@ -70,6 +188,36 @@ html, body {
 <div class="spinner"></div>
 <div class="loadingText">Loading...</div>
 </div>
+
+<!-- Floating Navigation -->
+<nav id="floatingNav">
+  <div class="nav-item nav-top" data-slide="1" title="Back to top">↑</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-slide="1">Introduction</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-slide="6">AI use</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-slide="16">Recent UI/UX</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item expandable" id="deepDiveNav">
+    Deep dive
+    <div class="submenu" id="deepDiveMenu">
+      <div class="submenu-item" data-slide="21">Hatch AI</div>
+      <div class="submenu-item" data-slide="47">Hatch IA</div>
+      <div class="submenu-item" data-slide="82">Ford</div>
+      <div class="submenu-item" data-slide="100">Lumen</div>
+    </div>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-item expandable" id="oldWorkNav">
+    Old work
+    <div class="submenu" id="oldWorkMenu">
+      <div class="submenu-item" data-slide="127">Fotex</div>
+      <div class="submenu-item" data-slide="143">Unge Univers</div>
+    </div>
+  </div>
+</nav>
+
 <div id="stageArea">
 <div id="stage" class="stage"></div>
 <div id="hyperlinkPlane" class="stage"></div>
@@ -86,6 +234,89 @@ window.addEventListener('load', function() {
     document.getElementById('loadingScreen').classList.add('loaded');
   }, 100);
 });
+
+// Navigation functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle expandable menu toggles
+  const deepDiveNav = document.getElementById('deepDiveNav');
+  const deepDiveMenu = document.getElementById('deepDiveMenu');
+  const oldWorkNav = document.getElementById('oldWorkNav');
+  const oldWorkMenu = document.getElementById('oldWorkMenu');
+
+  // Toggle Deep Dive menu
+  deepDiveNav.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isExpanded = deepDiveMenu.classList.contains('show');
+
+    // Close all menus
+    deepDiveMenu.classList.remove('show');
+    oldWorkMenu.classList.remove('show');
+    deepDiveNav.classList.remove('expanded');
+    oldWorkNav.classList.remove('expanded');
+
+    // Toggle current menu
+    if (!isExpanded) {
+      deepDiveMenu.classList.add('show');
+      deepDiveNav.classList.add('expanded');
+    }
+  });
+
+  // Toggle Old Work menu
+  oldWorkNav.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isExpanded = oldWorkMenu.classList.contains('show');
+
+    // Close all menus
+    deepDiveMenu.classList.remove('show');
+    oldWorkMenu.classList.remove('show');
+    deepDiveNav.classList.remove('expanded');
+    oldWorkNav.classList.remove('expanded');
+
+    // Toggle current menu
+    if (!isExpanded) {
+      oldWorkMenu.classList.add('show');
+      oldWorkNav.classList.add('expanded');
+    }
+  });
+
+  // Close menus when clicking outside
+  document.addEventListener('click', function() {
+    deepDiveMenu.classList.remove('show');
+    oldWorkMenu.classList.remove('show');
+    deepDiveNav.classList.remove('expanded');
+    oldWorkNav.classList.remove('expanded');
+  });
+
+  // Handle navigation to slides using hash (Keynote uses 1-based indexing)
+  const navItems = document.querySelectorAll('.nav-item[data-slide], .submenu-item[data-slide]');
+
+  function navigateToSlide(slideNumber) {
+    // Keynote player only reads hash on page load, so reload with new hash
+    window.location = '/#' + slideNumber;
+  }
+
+  navItems.forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const slideNumber = parseInt(this.getAttribute('data-slide'));
+
+      navigateToSlide(slideNumber);
+
+      // Close menus after navigation
+      deepDiveMenu.classList.remove('show');
+      oldWorkMenu.classList.remove('show');
+      deepDiveNav.classList.remove('expanded');
+      oldWorkNav.classList.remove('expanded');
+    });
+  });
+
+});
+
+// Navigation helper function
+window.gotoSlide = function(slideNum) {
+  window.location = '/#' + slideNum;
+};
+
 </script>
 </body>
 </html>

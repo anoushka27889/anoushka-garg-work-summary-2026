@@ -94,6 +94,8 @@ html, body {
   transition: all 0.2s ease;
   white-space: nowrap;
   user-select: none;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .nav-item.nav-top {
@@ -143,6 +145,8 @@ html, body {
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
+  display: block;
 }
 
 .submenu-item:hover {
@@ -191,29 +195,29 @@ html, body {
 
 <!-- Floating Navigation -->
 <nav id="floatingNav">
-  <div class="nav-item nav-top" data-slide="1" title="Back to top">↑</div>
+  <a href="#0" class="nav-item nav-top" title="Back to top">↑</a>
   <div class="nav-divider"></div>
-  <div class="nav-item" data-slide="1">Introduction</div>
+  <a href="#0" class="nav-item">Introduction</a>
   <div class="nav-divider"></div>
-  <div class="nav-item" data-slide="6">AI use</div>
+  <a href="#5" class="nav-item">AI use</a>
   <div class="nav-divider"></div>
-  <div class="nav-item" data-slide="16">Recent UI/UX</div>
+  <a href="#15" class="nav-item">Recent UI/UX</a>
   <div class="nav-divider"></div>
   <div class="nav-item expandable" id="deepDiveNav">
     Deep dive
     <div class="submenu" id="deepDiveMenu">
-      <div class="submenu-item" data-slide="21">Hatch AI</div>
-      <div class="submenu-item" data-slide="47">Hatch IA</div>
-      <div class="submenu-item" data-slide="82">Ford</div>
-      <div class="submenu-item" data-slide="100">Lumen</div>
+      <a href="#20" class="submenu-item">Hatch AI</a>
+      <a href="#46" class="submenu-item">Hatch IA</a>
+      <a href="#81" class="submenu-item">Ford</a>
+      <a href="#99" class="submenu-item">Lumen</a>
     </div>
   </div>
   <div class="nav-divider"></div>
   <div class="nav-item expandable" id="oldWorkNav">
     Old work
     <div class="submenu" id="oldWorkMenu">
-      <div class="submenu-item" data-slide="127">Fotex</div>
-      <div class="submenu-item" data-slide="143">Unge Univers</div>
+      <a href="#126" class="submenu-item">Fotex</a>
+      <a href="#142" class="submenu-item">Unge Univers</a>
     </div>
   </div>
 </nav>
@@ -287,100 +291,72 @@ document.addEventListener('DOMContentLoaded', function() {
     oldWorkNav.classList.remove('expanded');
   });
 
-  // Handle navigation to slides using hash (Keynote uses 1-based indexing)
-  const navItems = document.querySelectorAll('.nav-item[data-slide], .submenu-item[data-slide]');
+  // Navigation: Jump to slides by simulating rapid keyboard input
+  // Keynote HTML exports don't support hash navigation, only keyboard events
+  const navLinks = document.querySelectorAll('a[href^="#"]');
 
-  function navigateToSlide(slideNumber) {
-    // Get current slide from hash
-    const currentSlide = parseInt(window.location.hash.slice(1)) || 1;
-    const diff = slideNumber - currentSlide;
+  navLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetIndex = parseInt(this.getAttribute('href').substring(1));
 
-    if (diff === 0) return;
+      // Find current slide by checking which slide is visible
+      const stage = document.getElementById('stage');
+      if (!stage || !stage.textContent) {
+        navigateToSlide(targetIndex);
+        return;
+      }
 
-    // Simulate keyboard navigation
-    const key = diff > 0 ? 'ArrowRight' : 'ArrowLeft';
-    const steps = Math.abs(diff);
+      // Get current slide index from URL hash or default to 0
+      const currentHash = window.location.hash;
+      const currentIndex = currentHash ? parseInt(currentHash.substring(1)) : 0;
 
+      navigateToSlide(targetIndex, currentIndex);
+    });
+  });
+
+  function navigateToSlide(targetIndex, currentIndex = 0) {
+    const distance = Math.abs(targetIndex - currentIndex);
+    const direction = targetIndex > currentIndex ? 'ArrowRight' : 'ArrowLeft';
+
+    // Hide stage during navigation to create instant jump effect
+    const stageArea = document.getElementById('stageArea');
+    const originalTransition = stageArea.style.transition;
+    stageArea.style.transition = 'none';
+    stageArea.style.opacity = '0';
+
+    // Rapidly dispatch keyboard events (1ms interval for speed)
     let count = 0;
-    const navigate = () => {
-      if (count >= steps) return;
+    const interval = setInterval(function() {
+      if (count >= distance) {
+        clearInterval(interval);
 
-      // Dispatch to document body
+        // Show stage again after short delay to ensure slide is loaded
+        setTimeout(function() {
+          stageArea.style.transition = originalTransition;
+          stageArea.style.opacity = '1';
+        }, 50);
+
+        // Update URL hash to reflect current slide
+        history.replaceState(null, null, '#' + targetIndex);
+        return;
+      }
+
       const event = new KeyboardEvent('keydown', {
-        key: key,
-        code: key,
-        keyCode: diff > 0 ? 39 : 37,
-        which: diff > 0 ? 39 : 37,
+        key: direction,
+        code: direction,
+        which: direction === 'ArrowRight' ? 39 : 37,
+        keyCode: direction === 'ArrowRight' ? 39 : 37,
         bubbles: true,
         cancelable: true
       });
 
       document.dispatchEvent(event);
       count++;
-
-      if (count < steps) {
-        setTimeout(navigate, 100);
-      }
-    };
-
-    navigate();
+    }, 1); // 1ms interval for maximum speed
   }
-
-  navItems.forEach(function(item) {
-    item.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const slideNumber = parseInt(this.getAttribute('data-slide'));
-
-      navigateToSlide(slideNumber);
-
-      // Close menus after navigation
-      deepDiveMenu.classList.remove('show');
-      oldWorkMenu.classList.remove('show');
-      deepDiveNav.classList.remove('expanded');
-      oldWorkNav.classList.remove('expanded');
-    });
-  });
 
 });
-
-// Navigation helper function (for console testing)
-window.gotoSlide = function(slideNum) {
-  const currentSlide = parseInt(window.location.hash.slice(1)) || 1;
-  const diff = slideNum - currentSlide;
-
-  if (diff === 0) {
-    console.log('Already on slide', slideNum);
-    return;
-  }
-
-  console.log('Navigating from slide', currentSlide, 'to', slideNum, '(' + Math.abs(diff), 'steps)');
-
-  const key = diff > 0 ? 'ArrowRight' : 'ArrowLeft';
-  const steps = Math.abs(diff);
-  let count = 0;
-
-  const navigate = () => {
-    if (count >= steps) return;
-
-    const event = new KeyboardEvent('keydown', {
-      key: key,
-      code: key,
-      keyCode: diff > 0 ? 39 : 37,
-      which: diff > 0 ? 39 : 37,
-      bubbles: true,
-      cancelable: true
-    });
-
-    document.dispatchEvent(event);
-    count++;
-
-    if (count < steps) {
-      setTimeout(navigate, 100);
-    }
-  };
-
-  navigate();
-};
 
 </script>
 </body>
